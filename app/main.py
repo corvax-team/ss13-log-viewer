@@ -119,7 +119,8 @@ async def map_view(request: Request, number: int):
     for e in store.entries(round_):
         if e.z:
             busiest[str(e.z)] = busiest.get(str(e.z), 0) + 1
-    station_z = max(busiest, key=busiest.get) if busiest else "2"
+    station_levels = {z: n for z, n in busiest.items() if z != "1"}
+    station_z = max(station_levels, key=station_levels.get) if station_levels else "2"
     return templates.TemplateResponse(request, "map.html", {
         "round": round_,
         "map_name": map_name,

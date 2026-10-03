@@ -9,6 +9,12 @@
 	<aside class="sidebar">
 		<p class="help">Каждая точка на карте это строка лога с координатами. Выберите, что показывать, сузьте время ползунками, наведите на точку, чтобы прочитать, нажмите, чтобы открыть контекст.</p>
 
+		<h3>Где</h3>
+		<select id="z" onchange="setLevel(); load()">
+			{% for z, level in meta.levels.items() %}<option value="{{ z }}" {% if z == station_z %}selected{% endif %}>{{ level.name }}</option>{% endfor %}
+		</select>
+		<button type="button" class="secondary" onclick="fit()">Вписать карту в окно</button>
+
 		<h3>Кто</h3>
 		<input id="ckey" placeholder="ckey игрока" oninput="load()">
 		<input id="char" placeholder="или имя персонажа" oninput="load()">
@@ -32,11 +38,6 @@
 		<input type="range" id="tend" min="0" max="{{ duration }}" value="{{ duration }}" oninput="load()">
 		<p class="muted small">Время от начала раунда. Левый ползунок начало окна, правый конец.</p>
 
-		<h3>Где</h3>
-		<select id="z" onchange="setLevel(); load()">
-			{% for z, level in meta.levels.items() %}<option value="{{ z }}" {% if z == station_z %}selected{% endif %}>{{ level.name }}</option>{% endfor %}
-		</select>
-		<button type="button" class="secondary" onclick="fit()">Вписать карту в окно</button>
 		<p id="count" class="muted small"></p>
 	</aside>
 
