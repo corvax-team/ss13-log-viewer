@@ -123,6 +123,7 @@ async def map_view(request: Request, number: int):
         "known": known,
         "other": other,
         "colors": {k: c for k, _, c in CATEGORIES},
+        "labels": {k: label for k, label, _ in CATEGORIES},
         "start": start.strftime("%H:%M") if start else "",
         "duration": duration,
         "station_z": station_z,
