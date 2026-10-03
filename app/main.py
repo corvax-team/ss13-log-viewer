@@ -115,7 +115,11 @@ async def map_view(request: Request, number: int):
     meta = maps.meta(map_name) if map_name else None
     start, duration = store.span(round_)
     known, other = store.categories(round_)
-    station_z = next((z for z, level in (meta or {}).get("levels", {}).items() if "уровень" in level["name"] or level["name"] == map_name), "2")
+    busiest = {}
+    for e in store.entries(round_):
+        if e.z:
+            busiest[str(e.z)] = busiest.get(str(e.z), 0) + 1
+    station_z = max(busiest, key=busiest.get) if busiest else "2"
     return templates.TemplateResponse(request, "map.html", {
         "round": round_,
         "map_name": map_name,
