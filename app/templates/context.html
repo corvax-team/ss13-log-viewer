@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Раунд #{{ round.number }}, контекст{% endblock %}
 {% block content %}
-<h1>Раунд #{{ round.number }} <span class="muted">контекст</span></h1>
-<p><a href="{{ request.scope.root_path }}/round/{{ round.number }}">к поиску</a></p>
+<div class="titlebar">
+	<h1>Раунд #{{ round.number }} <span class="muted">контекст</span></h1>
+	<nav class="modes">
+		<a class="mode" href="{{ request.scope.root_path }}/round/{{ round.number }}">Поиск по тексту</a>
+		<a class="mode" href="{{ request.scope.root_path }}/round/{{ round.number }}/map?anchor={{ focus }}&tstart={{ offset }}&tend={{ offset }}">Карта</a>
+	</nav>
+</div>
 <table class="log">
 	{% for e in entries %}
 	<tr class="cat-{{ e.cat.split('-')[0] }} {% if e.index == focus %}focus{% endif %}" id="e{{ e.index }}">

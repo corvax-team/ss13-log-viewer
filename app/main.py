@@ -99,10 +99,13 @@ async def context_view(request: Request, number: int, index: int):
     round_ = store.round(number)
     if not round_:
         return PlainTextResponse("Раунд не найден", status_code=404)
+    entries = store.context(round_, index)
+    focused = next((e for e in entries if e.index == index), None)
     return templates.TemplateResponse(request, "context.html", {
         "round": round_,
-        "entries": store.context(round_, index),
+        "entries": entries,
         "focus": index,
+        "offset": store.offset(round_, focused) if focused else 0,
         "user": request.state.user,
     })
 

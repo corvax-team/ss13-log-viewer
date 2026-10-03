@@ -28,7 +28,12 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 .cat-game .cat { color: #81c995; }
 .cat-pda .cat, .cat-telecomms .cat { color: #8ab4f8; }
 @media (max-width: 700px) { main { padding: 8px; } .log .cat { display: none; } }
-.map-link { font-size: 0.8em; font-weight: normal; margin-left: 8px; }
+.titlebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.titlebar h1 { margin: 0; }
+.modes { display: inline-flex; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 3px; }
+.mode { padding: 7px 16px; border-radius: 6px; color: var(--text); text-decoration: none; font-weight: 600; }
+.mode:hover { background: #2b2f3a; }
+.mode.active { background: var(--accent); color: #fff; }
 .filters select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; }
 .timefields { display: flex; align-items: center; gap: 6px; }
 .timefields input { width: 100%; }

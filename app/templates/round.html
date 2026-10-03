@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Раунд #{{ round.number }}{% endblock %}
 {% block content %}
-<h1>Раунд #{{ round.number }} <span class="muted">{{ round.date }}</span> <a class="map-link" href="{{ request.scope.root_path }}/round/{{ round.number }}/map">карта</a></h1>
+<div class="titlebar">
+	<h1>Раунд #{{ round.number }} <span class="muted">{{ round.date }}</span></h1>
+	<nav class="modes">
+		<span class="mode active">Поиск по тексту</span>
+		<a class="mode" href="{{ request.scope.root_path }}/round/{{ round.number }}/map">Карта</a>
+	</nav>
+</div>
 <form method="get" class="filters">
 	<input name="q" placeholder="Текст" value="{{ filters.q }}">
 	<input name="ckey" placeholder="ckey" value="{{ filters.ckey }}">

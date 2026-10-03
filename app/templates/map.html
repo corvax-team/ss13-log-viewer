@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Раунд #{{ round.number }}, карта{% endblock %}
 {% block content %}
-<h1>Раунд #{{ round.number }} <span class="muted">{{ map_name or "карта неизвестна" }}, начало {{ start }}</span> <a class="map-link" href="{{ request.scope.root_path }}/round/{{ round.number }}">к поиску по тексту</a></h1>
+<div class="titlebar">
+	<h1>Раунд #{{ round.number }} <span class="muted">{{ map_name or "карта неизвестна" }}, начало {{ start }}</span></h1>
+	<nav class="modes">
+		<a class="mode" href="{{ request.scope.root_path }}/round/{{ round.number }}">Поиск по тексту</a>
+		<span class="mode active">Карта</span>
+	</nav>
+</div>
 {% if not meta %}
 <p class="error">Для этой карты ещё нет изображения. Рендер запускается при старте просмотрщика, зайдите позже.</p>
 {% else %}
