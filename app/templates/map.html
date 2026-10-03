@@ -43,6 +43,16 @@
 
 	<section class="mapmain">
 		<div id="toomany" class="toomany hidden"></div>
+		<div id="around" class="around hidden">
+			<span id="around-text"></span>
+			<span class="around-radius">
+				<button type="button" onclick="setRadius(30)">±30с</button>
+				<button type="button" onclick="setRadius(60)">±1м</button>
+				<button type="button" onclick="setRadius(180)">±3м</button>
+				<button type="button" onclick="setRadius(600)">±10м</button>
+			</span>
+			<button type="button" class="back" onclick="history.back()">Назад</button>
+		</div>
 		<div id="loading" class="loading hidden"><span>Загрузка...</span></div>
 		<div class="zoomctl">
 			<button type="button" onclick="zoomBy(1.4)" title="Приблизить">+</button>
@@ -71,6 +81,7 @@ const COLORS = {{ colors | tojson }};
 const LABELS = {{ labels | tojson }};
 let events = [];
 let scale = 0.3;
+let anchor = null;
 const MAX_DOTS = 1500;
 const MAX_ROWS = 400;
 let loadTimer = null;
@@ -141,15 +152,50 @@ async function fetchEvents() {
 	}
 }
 
+function showAround(e, radius) {
+	anchor = {i: e.i, o: e.o, x: e.x, y: e.y, z: e.z, t: e.t, m: e.m};
+	document.getElementById("ckey").value = "";
+	document.getElementById("char").value = "";
+	document.getElementById("q").value = "";
+	document.getElementById("z").value = String(e.z);
+	setRadius(radius, true);
+}
+
+function setRadius(radius, push) {
+	if (!anchor) return;
+	const start = document.getElementById("tstart"), end = document.getElementById("tend");
+	start.value = Math.max(0, anchor.o - radius);
+	end.value = Math.min(Number(end.max), anchor.o + radius);
+	document.getElementById("around-text").textContent = `Окружение события +${clock(anchor.o)} (${anchor.m.slice(0, 80)})`;
+	document.getElementById("around").classList.remove("hidden");
+	pushNext = !!push;
+	setLevel();
+	load();
+}
+
+function clearAround() {
+	anchor = null;
+	document.getElementById("around").classList.add("hidden");
+}
+
+let pushNext = false;
+
 function readUrl() {
 	const p = new URLSearchParams(location.search);
+	anchor = null;
+	document.getElementById("around").classList.add("hidden");
 	if (!p.toString()) return;
 	for (const id of ["z", "q", "ckey", "char", "tstart", "tend"]) {
-		if (p.has(id)) document.getElementById(id).value = p.get(id);
+		document.getElementById(id).value = p.has(id) ? p.get(id) : (id === "tend" ? document.getElementById(id).max : id === "tstart" ? 0 : id === "z" ? document.getElementById(id).value : "");
 	}
 	if (p.has("cat")) {
 		const wanted = new Set(p.getAll("cat"));
 		document.querySelectorAll("input[name=cat]").forEach(c => { c.checked = wanted.has(c.value); });
+	}
+	if (p.has("anchor")) {
+		anchor = {i: Number(p.get("anchor")), o: Number(p.get("anchor_o") || 0), m: p.get("anchor_m") || ""};
+		document.getElementById("around-text").textContent = `Окружение события +${clock(anchor.o)} (${anchor.m.slice(0, 80)})`;
+		document.getElementById("around").classList.remove("hidden");
 	}
 }
 
@@ -162,8 +208,13 @@ function writeUrl(params) {
 	const start = document.getElementById("tstart"), end = document.getElementById("tend");
 	if (start.value !== start.min) p.set("tstart", start.value);
 	if (end.value !== end.max) p.set("tend", end.value);
-	history.replaceState(null, "", `${location.pathname}?${p}`);
+	if (anchor) { p.set("anchor", anchor.i); p.set("anchor_o", anchor.o); p.set("anchor_m", anchor.m.slice(0, 80)); }
+	const url = `${location.pathname}?${p}`;
+	if (pushNext) history.pushState(null, "", url); else history.replaceState(null, "", url);
+	pushNext = false;
 }
+
+window.addEventListener("popstate", () => { readUrl(); setLevel(); load(); });
 
 async function fetchEventsInner() {
 	const params = new URLSearchParams();
@@ -178,6 +229,7 @@ async function fetchEventsInner() {
 	const resp = await fetch(`${ROOT}/round/${ROUND}/events.json?${params}`);
 	const data = await resp.json();
 	events = data.events.sort((a, b) => a.o - b.o);
+	if (anchor && events.some(e => e.i === anchor.i)) { const a = events.find(e => e.i === anchor.i); Object.assign(anchor, {x: a.x, y: a.y, z: a.z}); }
 	document.getElementById("count").textContent = data.truncated ? `В окне больше ${events.length} событий, показана только первая часть. Сузьте время или фильтр` : `${events.length} событий с координатами в этом окне`;
 	draw();
 }
@@ -208,13 +260,16 @@ function draw() {
 		pin.onmouseenter = ev => showTip(ev, e);
 		pin.onmouseleave = () => tip.classList.add("hidden");
 		pin.onclick = () => focusRow(e);
+		if (anchor && anchor.i === e.i) pin.classList.add("anchor");
 		pins.appendChild(pin);
 
 		if (list.children.length >= MAX_ROWS) continue;
 		const row = document.createElement("tr");
 		row.id = "row" + e.i;
-		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td><td class="open"><a href="${ROOT}/round/${ROUND}/context/${e.i}" target="_blank" title="Открыть в логе">лог</a></td>`;
+		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td><td class="open"><a href="#" class="near" title="Показать всё, что происходило в это время">рядом</a> <a href="${ROOT}/round/${ROUND}/context/${e.i}" target="_blank" title="Открыть в логе">лог</a></td>`;
+		row.querySelector(".near").onclick = ev => { ev.preventDefault(); showAround(e, 60); };
 		row.onclick = ev => { if (ev.target.tagName !== "A") focusPin(e); };
+		if (anchor && anchor.i === e.i) row.classList.add("anchor");
 		row.onmouseenter = () => document.getElementById("pin" + e.i)?.classList.add("hover");
 		row.onmouseleave = () => document.getElementById("pin" + e.i)?.classList.remove("hover");
 		list.appendChild(row);
@@ -222,6 +277,7 @@ function draw() {
 	if (!shown.length) list.innerHTML = `<tr><td class="muted">Нет событий в этом окне. Расширьте время или выберите другие категории.</td></tr>`;
 	else if (shown.length > MAX_ROWS) list.insertAdjacentHTML("beforeend", `<tr><td class="muted">В списке первые ${MAX_ROWS} из ${shown.length}, остальные только на карте.</td></tr>`);
 	drawTrack(shown);
+	if (anchor && anchor.x) { focusPin(anchor); }
 }
 
 function select(e) {
