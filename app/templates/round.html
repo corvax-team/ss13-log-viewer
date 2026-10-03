@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Раунд #{{ round.number }}{% endblock %}
+{% block content %}
+<h1>Раунд #{{ round.number }} <span class="muted">{{ round.date }}</span></h1>
+<form method="get" class="filters">
+	<input name="q" placeholder="Текст" value="{{ filters.q }}">
+	<input name="ckey" placeholder="ckey" value="{{ filters.ckey }}">
+	<input name="char" placeholder="Персонаж" value="{{ filters.char }}">
+	<input name="start" placeholder="с ЧЧ:ММ:СС" value="{{ filters.start }}" size="10">
+	<input name="end" placeholder="по ЧЧ:ММ:СС" value="{{ filters.end }}" size="10">
+	<button type="submit">Искать</button>
+	<a class="btn-link" href="{{ request.scope.root_path }}/round/{{ round.number }}/export?ckey={{ filters.ckey }}&char={{ filters.char }}&q={{ filters.q }}">Скачать как текст</a>
+	<div class="cats">
+		{% for name, count in categories.items() %}
+		<label><input type="checkbox" name="cat" value="{{ name }}" {% if name in filters.cat %}checked{% endif %}> {{ name }} <span class="muted">{{ count }}</span></label>
+		{% endfor %}
+	</div>
+</form>
+{% if total %}
+<p class="muted">Найдено {{ total }}, страница {{ page }} из {{ pages }}
+	{% if page > 1 %}<a href="?{{ query_base }}&page={{ page - 1 }}">назад</a>{% endif %}
+	{% if page < pages %}<a href="?{{ query_base }}&page={{ page + 1 }}">дальше</a>{% endif %}
+</p>
+<table class="log">
+	{% for e in hits %}
+	<tr class="cat-{{ e.cat.split('-')[0] }}">
+		<td class="time"><a href="{{ request.scope.root_path }}/round/{{ round.number }}/context/{{ e.index }}">{{ e.time }}</a></td>
+		<td class="cat">{{ e.cat }}</td>
+		<td class="msg">{{ e.msg }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% elif filters.q or filters.ckey or filters.char or filters.cat or filters.start or filters.end %}
+<p>Ничего не найдено</p>
+{% else %}
+<p class="muted">Задайте фильтр или выберите категории</p>
+{% endif %}
+{% endblock %}

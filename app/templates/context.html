@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Раунд #{{ round.number }}, контекст{% endblock %}
+{% block content %}
+<h1>Раунд #{{ round.number }} <span class="muted">контекст</span></h1>
+<p><a href="{{ request.scope.root_path }}/round/{{ round.number }}">к поиску</a></p>
+<table class="log">
+	{% for e in entries %}
+	<tr class="cat-{{ e.cat.split('-')[0] }} {% if e.index == focus %}focus{% endif %}" id="e{{ e.index }}">
+		<td class="time"><a href="{{ request.scope.root_path }}/round/{{ round.number }}/context/{{ e.index }}">{{ e.time }}</a></td>
+		<td class="cat">{{ e.cat }}</td>
+		<td class="msg">{{ e.msg }}</td>
+	</tr>
+	{% endfor %}
+</table>
+<script>document.getElementById("e{{ focus }}")?.scrollIntoView({block: "center"});</script>
+{% endblock %}

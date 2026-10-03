@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Раунды</h1>
+<table>
+	<tr><th>Раунд</th><th>Начало</th><th>Папка</th></tr>
+	{% for r, started in rounds %}
+	<tr>
+		<td><a href="{{ request.scope.root_path }}/round/{{ r.number }}">#{{ r.number }}</a></td>
+		<td>{{ started.strftime("%d.%m.%Y %H:%M") if started else "?" }}</td>
+		<td class="muted">{{ r.date }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endblock %}

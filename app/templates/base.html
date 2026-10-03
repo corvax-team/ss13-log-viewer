@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Логи Arkanar{% endblock %}</title>
+<link rel="stylesheet" href="{{ request.scope.root_path }}/static/style.css">
+</head>
+<body>
+<header>
+	<a class="brand" href="{{ request.scope.root_path }}/">Логи Arkanar</a>
+	{% if user %}<span class="who">{{ user.ckey }} ({{ user.rank }}) <a href="{{ request.scope.root_path }}/auth/logout">выйти</a></span>{% endif %}
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

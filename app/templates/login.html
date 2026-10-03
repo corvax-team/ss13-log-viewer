@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="box center">
+	<h1>Вход для администрации</h1>
+	<p>Войдите через Discord, привязанный к вашему ckey на сервере.</p>
+	{% if error %}<p class="error">{{ error }}</p>{% endif %}
+	<a class="btn" href="{{ login_url }}">Войти через Discord</a>
+</div>
+{% endblock %}

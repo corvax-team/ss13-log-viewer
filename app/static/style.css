@@ -1,0 +1,30 @@
+:root { --bg: #15171a; --panel: #1e2126; --border: #2c3038; --text: #d8dbe0; --muted: #8a919c; --accent: #5865f2; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.brand { color: var(--text); text-decoration: none; font-weight: 600; }
+.who { color: var(--muted); }
+main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+a { color: #8ab4f8; }
+h1 { font-size: 1.3em; margin: 0 0 12px; }
+.muted { color: var(--muted); font-weight: normal; }
+.error { color: #f28b82; }
+.box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+.center { max-width: 420px; margin: 10vh auto; text-align: center; }
+.btn { display: inline-block; padding: 10px 18px; background: var(--accent); color: #fff; border-radius: 6px; text-decoration: none; font-weight: 600; }
+.btn-link { align-self: center; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.filters input, .filters button { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; }
+.filters button { background: var(--accent); color: #fff; border: 0; cursor: pointer; }
+.cats { width: 100%; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.9em; }
+.log .time { white-space: nowrap; font-family: ui-monospace, monospace; width: 1%; }
+.log .cat { white-space: nowrap; color: var(--muted); width: 1%; }
+.log .msg { word-break: break-word; }
+.log tr.focus { background: #2b2f3a; }
+.cat-attack .cat { color: #f28b82; }
+.cat-admin .cat, .cat-adminprivate .cat { color: #fdd663; }
+.cat-game .cat { color: #81c995; }
+.cat-pda .cat, .cat-telecomms .cat { color: #8ab4f8; }
+@media (max-width: 700px) { main { padding: 8px; } .log .cat { display: none; } }
