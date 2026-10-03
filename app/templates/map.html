@@ -183,9 +183,7 @@ function focusRow(e) {
 }
 
 function drawTrack(shown) {
-	const defs = trackLayer.querySelector("defs");
-	trackLayer.innerHTML = "";
-	trackLayer.appendChild(defs);
+	trackLayer.querySelectorAll("line").forEach(l => l.remove());
 	const ckey = document.getElementById("ckey").value.toLowerCase().trim();
 	const name = document.getElementById("char").value.toLowerCase().trim();
 	if (!ckey && !name) return;
