@@ -42,6 +42,7 @@
 
 	<section class="mapmain">
 		<div id="toomany" class="toomany hidden"></div>
+		<div id="loading" class="loading hidden"><span>Загрузка...</span></div>
 		<div class="zoomctl">
 			<button type="button" onclick="zoomBy(1.4)" title="Приблизить">+</button>
 			<button type="button" onclick="zoomBy(1 / 1.4)" title="Отдалить">&minus;</button>
@@ -124,7 +125,22 @@ async function fetchCounts() {
 	document.querySelectorAll(".count").forEach(el => { el.textContent = counts[el.dataset.cat] || 0; });
 }
 
+let pending = 0;
+function busy(delta) {
+	pending = Math.max(0, pending + delta);
+	document.getElementById("loading").classList.toggle("hidden", pending === 0);
+}
+
 async function fetchEvents() {
+	busy(1);
+	try {
+		await fetchEventsInner();
+	} finally {
+		busy(-1);
+	}
+}
+
+async function fetchEventsInner() {
 	const params = new URLSearchParams();
 	params.set("z", document.getElementById("z").value);
 	params.set("q", document.getElementById("q").value);

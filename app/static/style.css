@@ -66,6 +66,8 @@ details.other summary { cursor: pointer; color: var(--muted); font-size: 0.9em; 
 .events tr:hover { background: #262a33; }
 .toomany { position: absolute; top: 0; left: 0; right: 0; z-index: 5; background: #5c2b29; color: #ffd9d6; padding: 10px 14px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #a33; }
 .mapmain { position: relative; }
+.loading { position: absolute; inset: 0; z-index: 7; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; border-radius: 8px; pointer-events: none; }
+.loading span { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-weight: 600; }
 .zoomctl { position: absolute; top: 10px; right: 10px; z-index: 6; display: flex; flex-direction: column; gap: 4px; }
 .zoomctl button { width: 36px; height: 36px; font-size: 20px; line-height: 1; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
 .zoomctl button:hover { background: #2b2f3a; }
