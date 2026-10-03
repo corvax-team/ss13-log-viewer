@@ -141,7 +141,6 @@ async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: 
     if not round_:
         return JSONResponse({"error": "no round"}, status_code=404)
     out = []
-    start, _ = store.span(round_)
     for e in store.search(round_, q, ckey, char, tuple(cat)):
         if not e.x or (z and e.z != z):
             continue
