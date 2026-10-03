@@ -49,7 +49,7 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 .tip { position: fixed; max-width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 0.85em; pointer-events: none; z-index: 10; }
 .hidden { display: none; }
 .maplayout { display: grid; grid-template-columns: 300px 1fr; gap: 12px; }
-.sidebar { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; align-self: start; position: sticky; top: 12px; max-height: calc(100vh - 90px); overflow: auto; }
+.sidebar { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; align-self: start; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
 .sidebar h3 { margin: 10px 0 2px; font-size: 0.95em; }
 .sidebar input[type=text], .sidebar input:not([type]), .sidebar select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; width: 100%; }
 .sidebar button.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; cursor: pointer; }
@@ -61,7 +61,7 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 details.other summary { cursor: pointer; color: var(--muted); font-size: 0.9em; margin-top: 4px; }
 .mapmain { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .mapmain .viewport { height: 62vh; }
-.events { max-height: 34vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+.events { border: 1px solid var(--border); border-radius: 8px; }
 .events tr { cursor: pointer; }
 .events tr:hover { background: #262a33; }
 .toomany { position: absolute; top: 0; left: 0; right: 0; z-index: 5; background: #5c2b29; color: #ffd9d6; padding: 10px 14px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #a33; }
