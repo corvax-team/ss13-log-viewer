@@ -15,3 +15,13 @@ Logs are read in place from the server's log directory, nothing is copied or ind
 | `SSCENTRAL_URL` | SS Central API, used to turn a Discord id into a ckey |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | game database, read access to the `admin` table decides who may log in |
 | `SESSION_SECRET` | random string that signs the session cookie |
+
+## Map view
+
+`/round/N/map` plots events with coordinates on the station map, with a time range, a player track and the same filters as the search. Maps are rendered on startup with SpacemanDMM `dmm-tools` from the game's build directory into `MAPS_DIR`, one version per map file hash.
+
+| Variable | Meaning |
+|---|---|
+| `GAME_DIR` | the live game build, with `tgstation.dme` and `_maps`, default `/game` |
+| `MAPS_DIR` | where rendered maps are stored, default `/maps` |
+| `DMM_TOOLS` | path to the `dmm-tools` binary, default `/usr/local/bin/dmm-tools` |

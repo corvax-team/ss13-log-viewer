@@ -28,3 +28,17 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 .cat-game .cat { color: #81c995; }
 .cat-pda .cat, .cat-telecomms .cat { color: #8ab4f8; }
 @media (max-width: 700px) { main { padding: 8px; } .log .cat { display: none; } }
+.map-link { font-size: 0.8em; font-weight: normal; margin-left: 8px; }
+.filters select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; }
+.timeline { width: 100%; display: flex; align-items: center; gap: 8px; }
+.timeline input[type=range] { flex: 1; }
+.mono { font-family: ui-monospace, monospace; }
+.viewport { position: relative; height: calc(100vh - 260px); min-height: 400px; overflow: auto; background: #000; border: 1px solid var(--border); border-radius: 8px; cursor: grab; user-select: none; }
+.world { position: relative; transform-origin: 0 0; }
+.world img { display: block; }
+#track-layer { position: absolute; left: 0; top: 0; pointer-events: none; }
+.track { fill: none; stroke: #fff; stroke-width: 3; stroke-opacity: 0.8; }
+.pin { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid #000; cursor: pointer; opacity: 0.9; }
+.pin:hover { z-index: 2; transform: scale(1.6); }
+.tip { position: fixed; max-width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 0.85em; pointer-events: none; z-index: 10; }
+.hidden { display: none; }

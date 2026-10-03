@@ -1,14 +1,16 @@
+import asyncio
 import os
 from pathlib import Path
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .auth import SESSION_COOKIE, Auth
-from .logs import LogStore, round_started
+from .logs import LogStore, round_map, round_started
+from .maps import MapStore
 
 ROOT_PATH = os.environ.get("ROOT_PATH", "")
 PAGE_SIZE = 200
@@ -17,7 +19,15 @@ app = FastAPI(root_path=ROOT_PATH, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 store = LogStore(os.environ.get("LOGS_DIR", "/logs"))
+maps = MapStore(os.environ.get("GAME_DIR", "/game"), os.environ.get("MAPS_DIR", "/maps"), os.environ.get("DMM_TOOLS", "/usr/local/bin/dmm-tools"))
 auth = Auth()
+MAX_MAP_EVENTS = 4000
+
+
+@app.on_event("startup")
+async def render_maps():
+    if maps.available():
+        asyncio.get_event_loop().run_in_executor(None, maps.render_missing)
 
 
 @app.middleware("http")
@@ -92,6 +102,49 @@ async def context_view(request: Request, number: int, index: int):
         "focus": index,
         "user": request.state.user,
     })
+
+
+@app.get("/round/{number}/map", response_class=HTMLResponse)
+async def map_view(request: Request, number: int):
+    round_ = store.round(number)
+    if not round_:
+        return PlainTextResponse("Раунд не найден", status_code=404)
+    map_name = round_map(round_)
+    meta = maps.meta(map_name) if map_name else None
+    entries = store.entries(round_)
+    times = [e.time for e in entries if e.time]
+    return templates.TemplateResponse(request, "map.html", {
+        "round": round_,
+        "map_name": map_name,
+        "meta": meta,
+        "categories": store.categories(round_),
+        "first": times[0] if times else "00:00:00",
+        "last": times[-1] if times else "23:59:59",
+        "user": request.state.user,
+    })
+
+
+@app.get("/round/{number}/events.json")
+async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: list[str] = Query(default=[]), z: int = 0):
+    round_ = store.round(number)
+    if not round_:
+        return JSONResponse({"error": "no round"}, status_code=404)
+    out = []
+    for e in store.search(round_, q, ckey, char, tuple(cat)):
+        if not e.x or (z and e.z != z):
+            continue
+        out.append({"i": e.index, "t": e.time, "c": e.cat, "k": e.ckey, "x": e.x, "y": e.y, "z": e.z, "m": e.msg[:300]})
+        if len(out) >= MAX_MAP_EVENTS:
+            break
+    return JSONResponse({"events": out, "truncated": len(out) >= MAX_MAP_EVENTS})
+
+
+@app.get("/maps/{map_name}/{z}.webp")
+async def map_image(map_name: str, z: int):
+    path = maps.image(map_name, z)
+    if not path:
+        return PlainTextResponse("Нет изображения", status_code=404)
+    return FileResponse(path, media_type="image/webp", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/round/{number}/export")

@@ -134,6 +134,14 @@ def _parse(line, file):
     )
 
 
+def round_map(round_):
+    for perf in round_.path.glob("perf-*.csv"):
+        parts = perf.stem.split("-", 2)
+        if len(parts) == 3:
+            return parts[2]
+    return None
+
+
 def round_started(round_):
     for file in ("game", "config"):
         path = round_.path / f"{file}.log.json"
