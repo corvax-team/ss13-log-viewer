@@ -13,6 +13,8 @@ log = logging.getLogger("viewer.maps")
 
 TILE = 32
 SCALE = 0.5
+RENDER_VERSION = "2"
+PAD_TILES = 3
 CENTCOM = "_maps/map_files/generic/CentCom.dmm"
 LAVALAND = "_maps/map_files/Mining/Lavaland.dmm"
 LEVEL_RE = re.compile(r"-(\d+)\.png$")
@@ -69,7 +71,7 @@ class MapStore:
 
     def _version(self, config):
         station = self.game / "_maps" / config["map_path"] / config["map_file"]
-        digest = hashlib.md5()
+        digest = hashlib.md5(RENDER_VERSION.encode())
         for file in (station, self.game / CENTCOM, self.game / LAVALAND):
             if file.exists():
                 digest.update(file.read_bytes())
@@ -94,9 +96,14 @@ class MapStore:
                 continue
             for png in self._minimap(dmm, work):
                 target = folder / f"z{z}.webp"
-                _shrink(png, target)
+                crop = _shrink(png, target)
                 png.unlink()
-                levels[str(z)] = {"name": label if dmm != station else f"{name}, уровень {LEVEL_RE.search(png.name).group(1)}", "width": _size(target)[0], "height": _size(target)[1]}
+                width, height = _size(target)
+                levels[str(z)] = {
+                    "name": label if dmm != station else f"{name}, уровень {LEVEL_RE.search(png.name).group(1)}",
+                    "width": width, "height": height,
+                    "left": crop[0], "top": crop[1], "full_height": crop[2],
+                }
                 z += 1
         work.rmdir()
         (folder / "meta.json").write_text(json.dumps({"map": name, "scale": SCALE, "tile": TILE, "levels": levels}, ensure_ascii=False), encoding="utf-8")
@@ -111,8 +118,14 @@ class MapStore:
 
 def _shrink(png, target):
     with Image.open(png) as image:
-        size = (int(image.width * SCALE), int(image.height * SCALE))
-        image.convert("RGB").resize(size, Image.LANCZOS).save(target, "WEBP", quality=82, method=4)
+        rgb = image.convert("RGB")
+        box = rgb.getbbox() or (0, 0, rgb.width, rgb.height)
+        pad = PAD_TILES * TILE
+        box = (max(0, box[0] - pad), max(0, box[1] - pad), min(rgb.width, box[2] + pad), min(rgb.height, box[3] + pad))
+        cropped = rgb.crop(box)
+        size = (int(cropped.width * SCALE), int(cropped.height * SCALE))
+        cropped.resize(size, Image.LANCZOS).save(target, "WEBP", quality=82, method=4)
+        return box[0], box[1], rgb.height
 
 
 def _size(path):
