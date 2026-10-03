@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlencode
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -60,7 +60,7 @@ async def rounds(request: Request):
 
 
 @app.get("/round/{number}", response_class=HTMLResponse)
-async def round_view(request: Request, number: int, q: str = "", ckey: str = "", char: str = "", cat: list[str] | None = None, start: str = "", end: str = "", page: int = 1):
+async def round_view(request: Request, number: int, q: str = "", ckey: str = "", char: str = "", cat: list[str] = Query(default=[]), start: str = "", end: str = "", page: int = 1):
     round_ = store.round(number)
     if not round_:
         return PlainTextResponse("Раунд не найден", status_code=404)
