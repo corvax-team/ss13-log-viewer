@@ -34,9 +34,14 @@
 		</div>
 
 		<h3>Когда <span id="trange" class="muted mono"></span></h3>
+		<div class="timefields">
+			<input id="tstart_text" class="mono" placeholder="чч:мм:сс" title="Начало окна" onchange="applyTimeText()">
+			<span class="muted">..</span>
+			<input id="tend_text" class="mono" placeholder="чч:мм:сс" title="Конец окна" onchange="applyTimeText()">
+		</div>
 		<input type="range" id="tstart" min="0" max="{{ duration }}" value="0" oninput="load()">
 		<input type="range" id="tend" min="0" max="{{ duration }}" value="{{ duration }}" oninput="load()">
-		<p class="muted small">Время от начала раунда. Левый ползунок начало окна, правый конец.</p>
+		<p class="muted small">Время от начала раунда, можно вписать руками (например 2:34 или 2:34:10). Раунд начат в {{ start }}, длина {{ (duration // 3600) }} ч {{ (duration % 3600) // 60 }} мин.</p>
 
 		<p id="count" class="muted small"></p>
 	</aside>
@@ -97,6 +102,22 @@ function level() { return META.levels[document.getElementById("z").value]; }
 function px(x) { return ((x - 1) * META.tile - (level().left || 0) + META.tile / 2) * META.scale; }
 function py(y) { return ((level().full_height || level().height / META.scale) - (y - 1) * META.tile - (level().top || 0) - META.tile / 2) * META.scale; }
 function clock(v) { return [Math.floor(v / 3600), Math.floor(v / 60) % 60, v % 60].map(n => String(n).padStart(2, "0")).join(":"); }
+function parseClock(text) {
+	const parts = text.trim().split(":").map(Number);
+	if (!parts.length || parts.some(isNaN)) return null;
+	while (parts.length < 3) parts.push(0);
+	return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
+
+function applyTimeText() {
+	const start = document.getElementById("tstart"), end = document.getElementById("tend");
+	const a = parseClock(document.getElementById("tstart_text").value);
+	const b = parseClock(document.getElementById("tend_text").value);
+	if (a !== null) start.value = Math.min(Math.max(a, 0), Number(start.max));
+	if (b !== null) end.value = Math.min(Math.max(b, 0), Number(end.max));
+	if (Number(start.value) > Number(end.value)) end.value = start.value;
+	load();
+}
 function color(cat) { return COLORS[cat] || "#e8eaed"; }
 
 function setLevel() {
@@ -238,6 +259,8 @@ function draw() {
 	const from = Number(document.getElementById("tstart").value);
 	const to = Number(document.getElementById("tend").value);
 	document.getElementById("trange").textContent = `${clock(from)} .. ${clock(to)}`;
+	document.getElementById("tstart_text").value = clock(from);
+	document.getElementById("tend_text").value = clock(to);
 	const shown = events;
 	pins.innerHTML = "";
 	list.innerHTML = "";
