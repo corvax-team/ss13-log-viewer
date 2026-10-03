@@ -37,7 +37,7 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 .world { position: relative; transform-origin: 0 0; }
 .world img { display: block; }
 #track-layer { position: absolute; left: 0; top: 0; pointer-events: none; }
-.track { fill: none; stroke: #fff; stroke-width: 3; stroke-opacity: 0.8; }
+.track { fill: none; stroke: #fff; stroke-width: 3; stroke-opacity: 0.85; stroke-linecap: round; }
 .pin { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid #000; cursor: pointer; opacity: 0.9; transform: scale(var(--inv, 1)); }
 .pin:hover { z-index: 2; transform: scale(calc(var(--inv, 1) * 1.6)); }
 .track { stroke-width: calc(3px * var(--inv, 1)); }
@@ -59,6 +59,9 @@ details.other summary { cursor: pointer; color: var(--muted); font-size: 0.9em; 
 .events { max-height: 34vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
 .events tr { cursor: pointer; }
 .events tr:hover { background: #262a33; }
-.toomany { position: sticky; top: 0; z-index: 5; background: #5c2b29; color: #ffd9d6; padding: 10px 14px; border-bottom: 1px solid #a33; }
+.toomany { position: absolute; top: 0; left: 0; right: 0; z-index: 5; background: #5c2b29; color: #ffd9d6; padding: 10px 14px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #a33; }
+.mapmain { position: relative; }
+.events td.open { white-space: nowrap; width: 1%; }
+.events tr.focus { background: #2b2f3a; outline: 1px solid #8ab4f8; }
 .pin.focus { transform: scale(calc(var(--inv, 1) * 2)); z-index: 3; box-shadow: 0 0 0 3px #fff; }
 @media (max-width: 900px) { .maplayout { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; } }

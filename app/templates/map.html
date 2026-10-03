@@ -13,7 +13,7 @@
 		<input id="ckey" placeholder="ckey игрока" oninput="load()">
 		<input id="char" placeholder="или имя персонажа" oninput="load()">
 		<input id="q" placeholder="текст в строке" oninput="load()">
-		<label class="check"><input type="checkbox" id="track" onchange="draw()"> соединить точки игрока линией по времени</label>
+		<p class="muted small">Если указан игрок, его точки соединяются стрелками в порядке времени.</p>
 
 		<h3>Что</h3>
 		<div class="cats-list">
@@ -41,11 +41,11 @@
 	</aside>
 
 	<section class="mapmain">
+		<div id="toomany" class="toomany hidden"></div>
 		<div id="viewport" class="viewport">
-			<div id="toomany" class="toomany hidden"></div>
 			<div id="world" class="world">
 				<img id="map" draggable="false">
-				<svg id="track-layer"></svg>
+				<svg id="track-layer"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#fff"/></marker></defs></svg>
 				<div id="pins"></div>
 			</div>
 		</div>
@@ -149,13 +149,14 @@ function draw() {
 		pin.style.background = color(e.c);
 		pin.onmouseenter = ev => showTip(ev, e);
 		pin.onmouseleave = () => tip.classList.add("hidden");
-		pin.onclick = () => window.open(`${ROOT}/round/${ROUND}/context/${e.i}`, "_blank");
+		pin.onclick = () => focusRow(e);
 		pins.appendChild(pin);
 
 		if (list.children.length >= MAX_ROWS) continue;
 		const row = document.createElement("tr");
-		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td>`;
-		row.onclick = () => focusPin(e);
+		row.id = "row" + e.i;
+		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td><td class="open"><a href="${ROOT}/round/${ROUND}/context/${e.i}" target="_blank" title="Открыть в логе">лог</a></td>`;
+		row.onclick = ev => { if (ev.target.tagName !== "A") focusPin(e); };
 		list.appendChild(row);
 	}
 	if (!shown.length) list.innerHTML = `<tr><td class="muted">Нет событий в этом окне. Расширьте время или выберите другие категории.</td></tr>`;
@@ -163,25 +164,42 @@ function draw() {
 	drawTrack(shown);
 }
 
-function focusPin(e) {
+function select(e) {
 	document.querySelectorAll(".pin.focus").forEach(p => p.classList.remove("focus"));
-	const pin = document.getElementById("pin" + e.i);
-	if (!pin) return;
-	pin.classList.add("focus");
+	document.querySelectorAll("#eventlist tr.focus").forEach(r => r.classList.remove("focus"));
+	document.getElementById("pin" + e.i)?.classList.add("focus");
+	document.getElementById("row" + e.i)?.classList.add("focus");
+}
+
+function focusPin(e) {
+	select(e);
 	viewport.scrollLeft = px(e.x) * scale - viewport.clientWidth / 2;
 	viewport.scrollTop = py(e.y) * scale - viewport.clientHeight / 2;
 }
 
+function focusRow(e) {
+	select(e);
+	document.getElementById("row" + e.i)?.scrollIntoView({block: "center", behavior: "smooth"});
+}
+
 function drawTrack(shown) {
+	const defs = trackLayer.querySelector("defs");
 	trackLayer.innerHTML = "";
-	if (!document.getElementById("track").checked) return;
-	const ckey = document.getElementById("ckey").value.toLowerCase();
-	const points = shown.filter(e => !ckey || e.k === ckey);
-	if (points.length < 2) return;
-	const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-	path.setAttribute("points", points.map(e => `${px(e.x)},${py(e.y)}`).join(" "));
-	path.setAttribute("class", "track");
-	trackLayer.appendChild(path);
+	trackLayer.appendChild(defs);
+	const ckey = document.getElementById("ckey").value.toLowerCase().trim();
+	const name = document.getElementById("char").value.toLowerCase().trim();
+	if (!ckey && !name) return;
+	const points = shown.filter(e => (!ckey || e.k === ckey) && (!name || e.n.toLowerCase().includes(name)));
+	for (let i = 1; i < points.length; i++) {
+		const a = points[i - 1], b = points[i];
+		if (a.x === b.x && a.y === b.y) continue;
+		const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+		line.setAttribute("x1", px(a.x)); line.setAttribute("y1", py(a.y));
+		line.setAttribute("x2", px(b.x)); line.setAttribute("y2", py(b.y));
+		line.setAttribute("class", "track");
+		line.setAttribute("marker-end", "url(#arrow)");
+		trackLayer.appendChild(line);
+	}
 }
 
 function showTip(ev, e) {
