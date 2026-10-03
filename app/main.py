@@ -153,6 +153,17 @@ async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: 
     return JSONResponse({"events": out, "truncated": len(out) >= MAX_MAP_EVENTS})
 
 
+@app.get("/round/{number}/counts.json")
+async def counts(number: int, q: str = "", ckey: str = "", char: str = ""):
+    round_ = store.round(number)
+    if not round_:
+        return JSONResponse({"error": "no round"}, status_code=404)
+    result = {}
+    for e in store.search(round_, q, ckey, char):
+        result[e.cat] = result.get(e.cat, 0) + 1
+    return JSONResponse(result)
+
+
 @app.get("/maps/{map_name}/{z}.webp")
 async def map_image(map_name: str, z: int):
     path = maps.image(map_name, z)

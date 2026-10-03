@@ -18,11 +18,11 @@
 		<h3>Что</h3>
 		<div class="cats-list">
 			{% for key, label, count in known %}
-			<label class="check"><input type="checkbox" name="cat" value="{{ key }}" {% if key in ('attack', 'game-say', 'admin', 'game-access') %}checked{% endif %} onchange="load()"><span class="dot" style="background:{{ colors[key] }}"></span>{{ label }} <span class="muted">{{ count }}</span></label>
+			<label class="check"><input type="checkbox" name="cat" value="{{ key }}" {% if key in ('attack', 'game-say', 'admin', 'game-access') %}checked{% endif %} onchange="load()"><span class="dot" style="background:{{ colors[key] }}"></span>{{ label }} <span class="muted count" data-cat="{{ key }}">{{ count }}</span></label>
 			{% endfor %}
 			<details class="other"><summary>Технические категории</summary>
 			{% for key, label, count in other %}
-			<label class="check"><input type="checkbox" name="cat" value="{{ key }}" onchange="load()"><span class="dot" style="background:#e8eaed"></span>{{ label }} <span class="muted">{{ count }}</span></label>
+			<label class="check"><input type="checkbox" name="cat" value="{{ key }}" onchange="load()"><span class="dot" style="background:#e8eaed"></span>{{ label }} <span class="muted count" data-cat="{{ key }}">{{ count }}</span></label>
 			{% endfor %}
 			</details>
 		</div>
@@ -111,7 +111,17 @@ function applyScale() {
 
 function load() {
 	clearTimeout(loadTimer);
-	loadTimer = setTimeout(fetchEvents, 250);
+	loadTimer = setTimeout(() => { fetchEvents(); fetchCounts(); }, 250);
+}
+
+async function fetchCounts() {
+	const params = new URLSearchParams();
+	params.set("q", document.getElementById("q").value);
+	params.set("ckey", document.getElementById("ckey").value);
+	params.set("char", document.getElementById("char").value);
+	const resp = await fetch(`${ROOT}/round/${ROUND}/counts.json?${params}`);
+	const counts = await resp.json();
+	document.querySelectorAll(".count").forEach(el => { el.textContent = counts[el.dataset.cat] || 0; });
 }
 
 async function fetchEvents() {
