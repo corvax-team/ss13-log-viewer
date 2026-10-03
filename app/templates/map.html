@@ -141,6 +141,30 @@ async function fetchEvents() {
 	}
 }
 
+function readUrl() {
+	const p = new URLSearchParams(location.search);
+	if (!p.toString()) return;
+	for (const id of ["z", "q", "ckey", "char", "tstart", "tend"]) {
+		if (p.has(id)) document.getElementById(id).value = p.get(id);
+	}
+	if (p.has("cat")) {
+		const wanted = new Set(p.getAll("cat"));
+		document.querySelectorAll("input[name=cat]").forEach(c => { c.checked = wanted.has(c.value); });
+	}
+}
+
+function writeUrl(params) {
+	const p = new URLSearchParams();
+	for (const [k, v] of params) {
+		if (k === "start" || k === "end") continue;
+		if (v) p.append(k, v);
+	}
+	const start = document.getElementById("tstart"), end = document.getElementById("tend");
+	if (start.value !== start.min) p.set("tstart", start.value);
+	if (end.value !== end.max) p.set("tend", end.value);
+	history.replaceState(null, "", `${location.pathname}?${p}`);
+}
+
 async function fetchEventsInner() {
 	const params = new URLSearchParams();
 	params.set("z", document.getElementById("z").value);
@@ -150,6 +174,7 @@ async function fetchEventsInner() {
 	params.set("start", document.getElementById("tstart").value);
 	params.set("end", document.getElementById("tend").value);
 	document.querySelectorAll("input[name=cat]:checked").forEach(c => params.append("cat", c.value));
+	writeUrl(params);
 	const resp = await fetch(`${ROOT}/round/${ROUND}/events.json?${params}`);
 	const data = await resp.json();
 	events = data.events.sort((a, b) => a.o - b.o);
@@ -288,8 +313,10 @@ viewport.addEventListener("mousedown", ev => { drag = {x: ev.clientX, y: ev.clie
 window.addEventListener("mousemove", ev => { if (drag) { viewport.scrollLeft = drag.l - (ev.clientX - drag.x); viewport.scrollTop = drag.t - (ev.clientY - drag.y); } });
 window.addEventListener("mouseup", () => { drag = null; });
 img.onload = fit;
+readUrl();
 setLevel();
 fetchEvents();
+fetchCounts();
 </script>
 {% endif %}
 {% endblock %}
