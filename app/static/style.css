@@ -59,5 +59,6 @@ details.other summary { cursor: pointer; color: var(--muted); font-size: 0.9em; 
 .events { max-height: 34vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
 .events tr { cursor: pointer; }
 .events tr:hover { background: #262a33; }
+.toomany { position: sticky; top: 0; z-index: 5; background: #5c2b29; color: #ffd9d6; padding: 10px 14px; border-bottom: 1px solid #a33; }
 .pin.focus { transform: scale(calc(var(--inv, 1) * 2)); z-index: 3; box-shadow: 0 0 0 3px #fff; }
 @media (max-width: 900px) { .maplayout { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; } }

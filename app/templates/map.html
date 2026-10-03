@@ -42,6 +42,7 @@
 
 	<section class="mapmain">
 		<div id="viewport" class="viewport">
+			<div id="toomany" class="toomany hidden"></div>
 			<div id="world" class="world">
 				<img id="map" draggable="false">
 				<svg id="track-layer"></svg>
@@ -63,6 +64,8 @@ const COLORS = {{ colors | tojson }};
 const LABELS = {{ labels | tojson }};
 let events = [];
 let scale = 0.3;
+const MAX_DOTS = 1500;
+const MAX_ROWS = 400;
 let loadTimer = null;
 const world = document.getElementById("world");
 const viewport = document.getElementById("viewport");
@@ -126,6 +129,15 @@ function draw() {
 	const shown = events.filter(e => e.o >= from && e.o <= to);
 	pins.innerHTML = "";
 	list.innerHTML = "";
+	const warning = document.getElementById("toomany");
+	if (shown.length > MAX_DOTS) {
+		warning.textContent = `${shown.length} событий в этом окне, это слишком много для карты. Сузьте время, категории или укажите игрока (предел ${MAX_DOTS}).`;
+		warning.classList.remove("hidden");
+		trackLayer.innerHTML = "";
+		list.innerHTML = `<tr><td class="muted">Список скрыт, пока событий больше ${MAX_DOTS}.</td></tr>`;
+		return;
+	}
+	warning.classList.add("hidden");
 	for (const e of shown) {
 		const pin = document.createElement("div");
 		pin.className = "pin";
@@ -138,12 +150,14 @@ function draw() {
 		pin.onclick = () => window.open(`${ROOT}/round/${ROUND}/context/${e.i}`, "_blank");
 		pins.appendChild(pin);
 
+		if (list.children.length >= MAX_ROWS) continue;
 		const row = document.createElement("tr");
 		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td>`;
 		row.onclick = () => focusPin(e);
 		list.appendChild(row);
 	}
 	if (!shown.length) list.innerHTML = `<tr><td class="muted">Нет событий в этом окне. Расширьте время или выберите другие категории.</td></tr>`;
+	else if (shown.length > MAX_ROWS) list.insertAdjacentHTML("beforeend", `<tr><td class="muted">В списке первые ${MAX_ROWS} из ${shown.length}, остальные только на карте.</td></tr>`);
 	drawTrack(shown);
 }
 
