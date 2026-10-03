@@ -51,10 +51,11 @@
 		<div id="around" class="around hidden">
 			<span id="around-text"></span>
 			<span class="around-radius">
-				<button type="button" onclick="setRadius(30)">±30с</button>
+				<button type="button" onclick="setRadius(1)">±1с</button>
+				<button type="button" onclick="setRadius(5)">±5с</button>
+				<button type="button" onclick="setRadius(15)">±15с</button>
 				<button type="button" onclick="setRadius(60)">±1м</button>
-				<button type="button" onclick="setRadius(180)">±3м</button>
-				<button type="button" onclick="setRadius(600)">±10м</button>
+				<button type="button" onclick="setRadius(300)">±5м</button>
 			</span>
 			<button type="button" class="back" onclick="history.back()">Назад</button>
 		</div>
@@ -290,7 +291,7 @@ function draw() {
 		const row = document.createElement("tr");
 		row.id = "row" + e.i;
 		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td><td class="open"><a href="#" class="near" title="Показать всё, что происходило в это время">рядом</a> <a href="${ROOT}/round/${ROUND}/context/${e.i}" target="_blank" title="Открыть в логе">лог</a></td>`;
-		row.querySelector(".near").onclick = ev => { ev.preventDefault(); showAround(e, 60); };
+		row.querySelector(".near").onclick = ev => { ev.preventDefault(); showAround(e, 1); };
 		row.onclick = ev => { if (ev.target.tagName !== "A") focusPin(e); };
 		if (anchor && anchor.i === e.i) row.classList.add("anchor");
 		row.onmouseenter = () => document.getElementById("pin" + e.i)?.classList.add("hover");
