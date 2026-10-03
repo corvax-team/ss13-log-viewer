@@ -37,10 +37,15 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 .world { position: relative; transform-origin: 0 0; }
 .world img { display: block; }
 #track-layer { position: absolute; left: 0; top: 0; pointer-events: none; }
-.track { fill: none; stroke: #fff; stroke-width: 3; stroke-opacity: 0.85; stroke-linecap: round; }
+.track { fill: none; stroke: #fff; stroke-opacity: 0.85; stroke-linecap: round; }
+.arrowhead { fill: #fff; fill-opacity: 0.95; }
+.endpoint circle { fill: none; stroke-width: 3px; }
+.endpoint.start circle { stroke: #2ecc71; }
+.endpoint.end circle { stroke: #e74c3c; }
+.endpoint text { fill: #fff; font-weight: 700; text-anchor: middle; paint-order: stroke; stroke: #000; stroke-width: 3px; }
+.pin.hover { transform: scale(calc(var(--inv, 1) * 2.2)); z-index: 3; box-shadow: 0 0 0 3px #8ab4f8; }
 .pin { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid #000; cursor: pointer; opacity: 0.9; transform: scale(var(--inv, 1)); }
 .pin:hover { z-index: 2; transform: scale(calc(var(--inv, 1) * 1.6)); }
-.track { stroke-width: calc(3px * var(--inv, 1)); }
 .tip { position: fixed; max-width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 0.85em; pointer-events: none; z-index: 10; }
 .hidden { display: none; }
 .maplayout { display: grid; grid-template-columns: 300px 1fr; gap: 12px; }

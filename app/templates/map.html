@@ -45,7 +45,7 @@
 		<div id="viewport" class="viewport">
 			<div id="world" class="world">
 				<img id="map" draggable="false">
-				<svg id="track-layer"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#fff"/></marker></defs></svg>
+				<svg id="track-layer"></svg>
 				<div id="pins"></div>
 			</div>
 		</div>
@@ -101,6 +101,7 @@ function fit() {
 function applyScale() {
 	world.style.transform = `scale(${scale})`;
 	world.style.setProperty("--inv", Math.max(1, 0.6 / scale));
+	drawTrack(events);
 }
 
 function load() {
@@ -157,6 +158,8 @@ function draw() {
 		row.id = "row" + e.i;
 		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td><td class="open"><a href="${ROOT}/round/${ROUND}/context/${e.i}" target="_blank" title="Открыть в логе">лог</a></td>`;
 		row.onclick = ev => { if (ev.target.tagName !== "A") focusPin(e); };
+		row.onmouseenter = () => document.getElementById("pin" + e.i)?.classList.add("hover");
+		row.onmouseleave = () => document.getElementById("pin" + e.i)?.classList.remove("hover");
 		list.appendChild(row);
 	}
 	if (!shown.length) list.innerHTML = `<tr><td class="muted">Нет событий в этом окне. Расширьте время или выберите другие категории.</td></tr>`;
@@ -182,26 +185,47 @@ function focusRow(e) {
 	document.getElementById("row" + e.i)?.scrollIntoView({block: "center", behavior: "smooth"});
 }
 
+function svg(tag, attrs) {
+	const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+	for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+	return el;
+}
+
 function drawTrack(shown) {
-	trackLayer.querySelectorAll("line").forEach(l => l.remove());
+	trackLayer.innerHTML = "";
 	const ckey = document.getElementById("ckey").value.toLowerCase().trim();
 	const name = document.getElementById("char").value.toLowerCase().trim();
 	if (!ckey && !name) return;
 	const points = shown.filter(e => (!ckey || e.k === ckey) && (!name || e.n.toLowerCase().includes(name)));
+	if (!points.length) return;
+	const inv = Math.max(1, 0.6 / scale);
+	const head = 9 * inv;
 	for (let i = 1; i < points.length; i++) {
 		const a = points[i - 1], b = points[i];
 		if (a.x === b.x && a.y === b.y) continue;
-		const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-		line.setAttribute("x1", px(a.x)); line.setAttribute("y1", py(a.y));
-		line.setAttribute("x2", px(b.x)); line.setAttribute("y2", py(b.y));
-		line.setAttribute("class", "track");
-		line.setAttribute("marker-end", "url(#arrow)");
-		trackLayer.appendChild(line);
+		const x1 = px(a.x), y1 = py(a.y), x2 = px(b.x), y2 = py(b.y);
+		trackLayer.appendChild(svg("line", {x1, y1, x2, y2, class: "track", "stroke-width": 2.5 * inv}));
+		const ang = Math.atan2(y2 - y1, x2 - x1);
+		const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+		const tip = `${mx + Math.cos(ang) * head},${my + Math.sin(ang) * head}`;
+		const l = `${mx + Math.cos(ang + 2.5) * head},${my + Math.sin(ang + 2.5) * head}`;
+		const r = `${mx + Math.cos(ang - 2.5) * head},${my + Math.sin(ang - 2.5) * head}`;
+		trackLayer.appendChild(svg("polygon", {points: `${tip} ${l} ${r}`, class: "arrowhead"}));
+	}
+	const first = points[0], last = points[points.length - 1];
+	for (const [p, cls, label] of [[first, "start", "старт"], [last, "end", "финиш"]]) {
+		const g = svg("g", {class: "endpoint " + cls, transform: `translate(${px(p.x)},${py(p.y)})`});
+		g.appendChild(svg("circle", {r: 11 * inv}));
+		const t = svg("text", {y: -14 * inv, "font-size": 13 * inv});
+		t.textContent = `${label} ${clock(p.o)}`;
+		g.appendChild(t);
+		trackLayer.appendChild(g);
 	}
 }
 
 function showTip(ev, e) {
 	tip.textContent = `+${clock(e.o)} (${e.t}) ${LABELS[e.c] || e.c}, ${e.a}: ${e.m}`;
+	select(e);
 	tip.classList.remove("hidden");
 	tip.style.left = Math.min(ev.clientX + 12, window.innerWidth - 420) + "px";
 	tip.style.top = (ev.clientY + 12) + "px";
