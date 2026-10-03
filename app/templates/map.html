@@ -28,8 +28,8 @@
 		</div>
 
 		<h3>Когда <span id="trange" class="muted mono"></span></h3>
-		<input type="range" id="tstart" min="0" max="{{ duration }}" value="0" oninput="draw()">
-		<input type="range" id="tend" min="0" max="{{ duration }}" value="{{ duration }}" oninput="draw()">
+		<input type="range" id="tstart" min="0" max="{{ duration }}" value="0" oninput="load()">
+		<input type="range" id="tend" min="0" max="{{ duration }}" value="{{ duration }}" oninput="load()">
 		<p class="muted small">Время от начала раунда. Левый ползунок начало окна, правый конец.</p>
 
 		<h3>Где</h3>
@@ -114,11 +114,13 @@ async function fetchEvents() {
 	params.set("q", document.getElementById("q").value);
 	params.set("ckey", document.getElementById("ckey").value);
 	params.set("char", document.getElementById("char").value);
+	params.set("start", document.getElementById("tstart").value);
+	params.set("end", document.getElementById("tend").value);
 	document.querySelectorAll("input[name=cat]:checked").forEach(c => params.append("cat", c.value));
 	const resp = await fetch(`${ROOT}/round/${ROUND}/events.json?${params}`);
 	const data = await resp.json();
 	events = data.events.sort((a, b) => a.o - b.o);
-	document.getElementById("count").textContent = data.truncated ? `Показаны первые ${events.length} событий, сузьте фильтр` : `${events.length} событий с координатами на этом уровне`;
+	document.getElementById("count").textContent = data.truncated ? `В окне больше ${events.length} событий, показана только первая часть. Сузьте время или фильтр` : `${events.length} событий с координатами в этом окне`;
 	draw();
 }
 
@@ -126,7 +128,7 @@ function draw() {
 	const from = Number(document.getElementById("tstart").value);
 	const to = Number(document.getElementById("tend").value);
 	document.getElementById("trange").textContent = `${clock(from)} .. ${clock(to)}`;
-	const shown = events.filter(e => e.o >= from && e.o <= to);
+	const shown = events;
 	pins.innerHTML = "";
 	list.innerHTML = "";
 	const warning = document.getElementById("toomany");

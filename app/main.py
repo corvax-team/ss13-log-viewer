@@ -136,7 +136,7 @@ async def map_view(request: Request, number: int):
 
 
 @app.get("/round/{number}/events.json")
-async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: list[str] = Query(default=[]), z: int = 0):
+async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: list[str] = Query(default=[]), z: int = 0, start: int = 0, end: int = 10**9):
     round_ = store.round(number)
     if not round_:
         return JSONResponse({"error": "no round"}, status_code=404)
@@ -145,7 +145,10 @@ async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: 
     for e in store.search(round_, q, ckey, char, tuple(cat)):
         if not e.x or (z and e.z != z):
             continue
-        out.append({"i": e.index, "t": e.time, "o": store.offset(round_, e), "c": e.cat, "k": e.ckey, "n": e.char, "a": e.area, "x": e.x, "y": e.y, "z": e.z, "m": e.msg[:300]})
+        offset = store.offset(round_, e)
+        if offset < start or offset > end:
+            continue
+        out.append({"i": e.index, "t": e.time, "o": offset, "c": e.cat, "k": e.ckey, "n": e.char, "a": e.area, "x": e.x, "y": e.y, "z": e.z, "m": e.msg[:300]})
         if len(out) >= MAX_MAP_EVENTS:
             break
     return JSONResponse({"events": out, "truncated": len(out) >= MAX_MAP_EVENTS})
