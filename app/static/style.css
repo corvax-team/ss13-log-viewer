@@ -75,3 +75,4 @@ details.other summary { cursor: pointer; color: var(--muted); font-size: 0.9em; 
 .events tr.focus { background: #2b2f3a; outline: 1px solid #8ab4f8; }
 .pin.focus { transform: scale(calc(var(--inv, 1) * 2)); z-index: 3; box-shadow: 0 0 0 3px #fff; }
 @media (max-width: 900px) { .maplayout { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; } }
+.loading.hidden, .toomany.hidden { display: none; }
