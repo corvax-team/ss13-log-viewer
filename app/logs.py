@@ -153,11 +153,14 @@ def _parse(line, file):
     cat = raw.get("cat") or file
     if cat.startswith("href"):
         return None
+    ts = _normalize_ts(raw.get("ts", ""))
+    if not ts:
+        return None
     actor = ACTOR_RE.search(msg)
     loc = LOC_RE.search(msg)
     return Entry(
         index=0,
-        ts=raw.get("ts", ""),
+        ts=ts,
         cat=cat,
         msg=msg,
         ckey=actor.group("ckey").lower() if actor and actor.group("ckey") != "*no key*" else "",
@@ -168,6 +171,16 @@ def _parse(line, file):
         z=int(loc.group("z")) if loc else 0,
         file=file,
     )
+
+
+def _normalize_ts(ts):
+    ts = str(ts)
+    if re.match(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", ts):
+        return ts
+    try:
+        return datetime.utcfromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S.000")
+    except (ValueError, OverflowError):
+        return ""
 
 
 def _dt(ts):
