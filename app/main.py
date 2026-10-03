@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .auth import SESSION_COOKIE, Auth
-from .logs import LogStore, round_map, round_started
+from .logs import CATEGORIES, LogStore, round_map, round_started
 from .maps import MapStore
 
 ROOT_PATH = os.environ.get("ROOT_PATH", "")
@@ -78,9 +78,11 @@ async def round_view(request: Request, number: int, q: str = "", ckey: str = "",
     hits = list(store.search(round_, q, ckey, char, cats, start, end)) if (q or ckey or char or cats or start or end) else []
     pages = max(1, (len(hits) + PAGE_SIZE - 1) // PAGE_SIZE)
     page = min(max(page, 1), pages)
+    known, other = store.categories(round_)
     return templates.TemplateResponse(request, "round.html", {
         "round": round_,
-        "categories": store.categories(round_),
+        "known": known,
+        "other": other,
         "hits": hits[(page - 1) * PAGE_SIZE : page * PAGE_SIZE],
         "total": len(hits),
         "page": page,
@@ -111,15 +113,19 @@ async def map_view(request: Request, number: int):
         return PlainTextResponse("Раунд не найден", status_code=404)
     map_name = round_map(round_)
     meta = maps.meta(map_name) if map_name else None
-    entries = store.entries(round_)
-    times = [e.time for e in entries if e.time]
+    start, duration = store.span(round_)
+    known, other = store.categories(round_)
+    station_z = next((z for z, level in (meta or {}).get("levels", {}).items() if "уровень" in level["name"] or level["name"] == map_name), "2")
     return templates.TemplateResponse(request, "map.html", {
         "round": round_,
         "map_name": map_name,
         "meta": meta,
-        "categories": store.categories(round_),
-        "first": times[0] if times else "00:00:00",
-        "last": times[-1] if times else "23:59:59",
+        "known": known,
+        "other": other,
+        "colors": {k: c for k, _, c in CATEGORIES},
+        "start": start.strftime("%H:%M") if start else "",
+        "duration": duration,
+        "station_z": station_z,
         "user": request.state.user,
     })
 
@@ -130,10 +136,11 @@ async def events(number: int, q: str = "", ckey: str = "", char: str = "", cat: 
     if not round_:
         return JSONResponse({"error": "no round"}, status_code=404)
     out = []
+    start, _ = store.span(round_)
     for e in store.search(round_, q, ckey, char, tuple(cat)):
         if not e.x or (z and e.z != z):
             continue
-        out.append({"i": e.index, "t": e.time, "c": e.cat, "k": e.ckey, "x": e.x, "y": e.y, "z": e.z, "m": e.msg[:300]})
+        out.append({"i": e.index, "t": e.time, "o": store.offset(round_, e), "c": e.cat, "k": e.ckey, "n": e.char, "a": e.area, "x": e.x, "y": e.y, "z": e.z, "m": e.msg[:300]})
         if len(out) >= MAX_MAP_EVENTS:
             break
     return JSONResponse({"events": out, "truncated": len(out) >= MAX_MAP_EVENTS})

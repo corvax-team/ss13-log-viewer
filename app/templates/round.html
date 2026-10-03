@@ -11,9 +11,14 @@
 	<button type="submit">Искать</button>
 	<a class="btn-link" href="{{ request.scope.root_path }}/round/{{ round.number }}/export?ckey={{ filters.ckey }}&char={{ filters.char }}&q={{ filters.q }}">Скачать как текст</a>
 	<div class="cats">
-		{% for name, count in categories.items() %}
-		<label><input type="checkbox" name="cat" value="{{ name }}" {% if name in filters.cat %}checked{% endif %}> {{ name }} <span class="muted">{{ count }}</span></label>
+		{% for key, label, count in known %}
+		<label><input type="checkbox" name="cat" value="{{ key }}" {% if key in filters.cat %}checked{% endif %}> {{ label }} <span class="muted">{{ count }}</span></label>
 		{% endfor %}
+		<details class="other"><summary>Технические категории</summary>
+		{% for key, label, count in other %}
+		<label><input type="checkbox" name="cat" value="{{ key }}" {% if key in filters.cat %}checked{% endif %}> {{ label }} <span class="muted">{{ count }}</span></label>
+		{% endfor %}
+		</details>
 	</div>
 </form>
 {% if total %}

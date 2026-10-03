@@ -10,6 +10,29 @@ LOC_RE = re.compile(r"\((?P<area>[^()]*?) \((?P<x>\d+),(?P<y>\d+),(?P<z>\d+)\)\)
 ROUND_RE = re.compile(r"round-(\d+)$")
 CACHE_ROUNDS = 3
 
+CATEGORIES = [
+    ("attack", "Атаки и урон", "#f28b82"),
+    ("game-say", "Речь", "#81c995"),
+    ("game-whisper", "Шёпот", "#5bb974"),
+    ("game-emote", "Эмоции", "#c58af9"),
+    ("game-ooc", "OOC", "#9aa0a6"),
+    ("game-looc", "LOOC", "#9aa0a6"),
+    ("pda", "ПДА и сообщения", "#8ab4f8"),
+    ("telecomms", "Рация", "#669df6"),
+    ("game-access", "Входы и выходы", "#fcc934"),
+    ("admin", "Действия админов", "#fdd663"),
+    ("adminprivate", "Админ-приват", "#fde293"),
+    ("adminprivate-asay", "Asay", "#fde293"),
+    ("uplink", "Аплинк", "#ff8bcb"),
+    ("silicon", "Синтетики", "#78d9ec"),
+    ("mecha", "Мехи", "#78d9ec"),
+    ("paper", "Бумаги", "#e8eaed"),
+    ("manifest", "Манифест", "#e8eaed"),
+    ("game", "Игра", "#9aa0a6"),
+]
+CATEGORY_LABELS = {key: label for key, label, _ in CATEGORIES}
+CATEGORY_COLORS = {key: color for key, _, color in CATEGORIES}
+
 
 @dataclass
 class Round:
@@ -73,7 +96,20 @@ class LogStore:
         counts = {}
         for entry in self.entries(round_):
             counts[entry.cat] = counts.get(entry.cat, 0) + 1
-        return dict(sorted(counts.items(), key=lambda kv: -kv[1]))
+        known = [(k, CATEGORY_LABELS[k], counts[k]) for k, _, _ in CATEGORIES if k in counts]
+        other = sorted(((k, k, n) for k, n in counts.items() if k not in CATEGORY_LABELS), key=lambda t: -t[2])
+        return known, other
+
+    def span(self, round_):
+        entries = self.entries(round_)
+        if not entries:
+            return None, 0
+        start = _dt(entries[0].ts)
+        return start, int((_dt(entries[-1].ts) - start).total_seconds())
+
+    def offset(self, round_, entry):
+        start, _ = self.span(round_)
+        return int((_dt(entry.ts) - start).total_seconds()) if start else 0
 
     def search(self, round_, query="", ckey="", char="", cats=(), start="", end=""):
         pattern = re.compile(re.escape(query), re.IGNORECASE) if query else None
@@ -132,6 +168,10 @@ def _parse(line, file):
         z=int(loc.group("z")) if loc else 0,
         file=file,
     )
+
+
+def _dt(ts):
+    return datetime.strptime(ts[:19], "%Y-%m-%d %H:%M:%S")
 
 
 def round_map(round_):

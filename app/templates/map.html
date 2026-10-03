@@ -1,38 +1,57 @@
 {% extends "base.html" %}
 {% block title %}Раунд #{{ round.number }}, карта{% endblock %}
 {% block content %}
-<h1>Раунд #{{ round.number }} <span class="muted">{{ map_name or "карта неизвестна" }}</span> <a class="map-link" href="{{ request.scope.root_path }}/round/{{ round.number }}">к поиску</a></h1>
+<h1>Раунд #{{ round.number }} <span class="muted">{{ map_name or "карта неизвестна" }}, начало {{ start }}</span> <a class="map-link" href="{{ request.scope.root_path }}/round/{{ round.number }}">к поиску по тексту</a></h1>
 {% if not meta %}
 <p class="error">Для этой карты ещё нет изображения. Рендер запускается при старте просмотрщика, зайдите позже.</p>
 {% else %}
-<form id="mapform" class="filters" onsubmit="return false">
-	<select id="z">
-		{% for z, level in meta.levels.items() %}<option value="{{ z }}" {% if z == '3' %}selected{% endif %}>z{{ z }}: {{ level.name }}</option>{% endfor %}
-	</select>
-	<input id="q" placeholder="Текст">
-	<input id="ckey" placeholder="ckey">
-	<input id="char" placeholder="Персонаж">
-	<button type="button" onclick="load()">Показать</button>
-	<label><input type="checkbox" id="track"> трек по времени</label>
-	<span id="count" class="muted"></span>
-	<div class="cats">
-		{% for name, count in categories.items() %}
-		<label><input type="checkbox" name="cat" value="{{ name }}" {% if name in ('attack', 'game-say', 'admin') %}checked{% endif %}> {{ name }} <span class="muted">{{ count }}</span></label>
-		{% endfor %}
-	</div>
-	<div class="timeline">
-		<span id="tfrom" class="mono">{{ first }}</span>
-		<input type="range" id="tstart" min="0" max="86399" value="{{ first[0:2]|int * 3600 + first[3:5]|int * 60 + first[6:8]|int }}" oninput="draw()">
-		<input type="range" id="tend" min="0" max="86399" value="{{ last[0:2]|int * 3600 + last[3:5]|int * 60 + last[6:8]|int }}" oninput="draw()">
-		<span id="tto" class="mono">{{ last }}</span>
-	</div>
-</form>
-<div id="viewport" class="viewport">
-	<div id="world" class="world">
-		<img id="map" draggable="false">
-		<svg id="track-layer"></svg>
-		<div id="pins"></div>
-	</div>
+<div class="maplayout">
+	<aside class="sidebar">
+		<p class="help">Каждая точка на карте это строка лога с координатами. Выберите, что показывать, сузьте время ползунками, наведите на точку, чтобы прочитать, нажмите, чтобы открыть контекст.</p>
+
+		<h3>Кто</h3>
+		<input id="ckey" placeholder="ckey игрока" oninput="load()">
+		<input id="char" placeholder="или имя персонажа" oninput="load()">
+		<input id="q" placeholder="текст в строке" oninput="load()">
+		<label class="check"><input type="checkbox" id="track" onchange="draw()"> соединить точки игрока линией по времени</label>
+
+		<h3>Что</h3>
+		<div class="cats-list">
+			{% for key, label, count in known %}
+			<label class="check"><input type="checkbox" name="cat" value="{{ key }}" {% if key in ('attack', 'game-say', 'admin', 'game-access') %}checked{% endif %} onchange="load()"><span class="dot" style="background:{{ colors[key] }}"></span>{{ label }} <span class="muted">{{ count }}</span></label>
+			{% endfor %}
+			<details class="other"><summary>Технические категории</summary>
+			{% for key, label, count in other %}
+			<label class="check"><input type="checkbox" name="cat" value="{{ key }}" onchange="load()"><span class="dot" style="background:#e8eaed"></span>{{ label }} <span class="muted">{{ count }}</span></label>
+			{% endfor %}
+			</details>
+		</div>
+
+		<h3>Когда <span id="trange" class="muted mono"></span></h3>
+		<input type="range" id="tstart" min="0" max="{{ duration }}" value="0" oninput="draw()">
+		<input type="range" id="tend" min="0" max="{{ duration }}" value="{{ duration }}" oninput="draw()">
+		<p class="muted small">Время от начала раунда. Левый ползунок начало окна, правый конец.</p>
+
+		<h3>Где</h3>
+		<select id="z" onchange="setLevel(); load()">
+			{% for z, level in meta.levels.items() %}<option value="{{ z }}" {% if z == station_z %}selected{% endif %}>{{ level.name }}</option>{% endfor %}
+		</select>
+		<button type="button" class="secondary" onclick="fit()">Вписать карту в окно</button>
+		<p id="count" class="muted small"></p>
+	</aside>
+
+	<section class="mapmain">
+		<div id="viewport" class="viewport">
+			<div id="world" class="world">
+				<img id="map" draggable="false">
+				<svg id="track-layer"></svg>
+				<div id="pins"></div>
+			</div>
+		</div>
+		<div class="events">
+			<table class="log" id="eventlist"></table>
+		</div>
+	</section>
 </div>
 <div id="tip" class="tip hidden"></div>
 <script>
@@ -40,35 +59,50 @@ const ROOT = "{{ request.scope.root_path }}";
 const ROUND = {{ round.number }};
 const MAP = {{ map_name | tojson }};
 const META = {{ meta | tojson }};
-const COLORS = {attack: "#f28b82", "game-say": "#81c995", admin: "#fdd663", adminprivate: "#fdd663", pda: "#8ab4f8", telecomms: "#8ab4f8", "game-emote": "#c58af9", game: "#9aa0a6"};
+const COLORS = {{ colors | tojson }};
+const LABELS = {{ dict(known | map('slice', 0, 2) | map('list')) | tojson }};
 let events = [];
-let scale = 0.35;
+let scale = 0.3;
+let loadTimer = null;
 const world = document.getElementById("world");
 const viewport = document.getElementById("viewport");
 const img = document.getElementById("map");
 const pins = document.getElementById("pins");
 const trackLayer = document.getElementById("track-layer");
 const tip = document.getElementById("tip");
+const list = document.getElementById("eventlist");
 
+function level() { return META.levels[document.getElementById("z").value]; }
 function px(x) { return (x - 1) * META.tile * META.scale + META.tile * META.scale / 2; }
-function py(y) { const level = META.levels[document.getElementById("z").value]; return level.height - (y - 1) * META.tile * META.scale - META.tile * META.scale / 2; }
-function secs(t) { const [h, m, s] = t.split(":").map(Number); return h * 3600 + m * 60 + s; }
+function py(y) { return level().height - (y - 1) * META.tile * META.scale - META.tile * META.scale / 2; }
 function clock(v) { return [Math.floor(v / 3600), Math.floor(v / 60) % 60, v % 60].map(n => String(n).padStart(2, "0")).join(":"); }
+function color(cat) { return COLORS[cat] || "#e8eaed"; }
 
 function setLevel() {
 	const z = document.getElementById("z").value;
-	const level = META.levels[z];
 	img.src = `${ROOT}/maps/${encodeURIComponent(MAP)}/${z}.webp`;
-	world.style.width = level.width + "px";
-	world.style.height = level.height + "px";
-	trackLayer.setAttribute("width", level.width);
-	trackLayer.setAttribute("height", level.height);
+	world.style.width = level().width + "px";
+	world.style.height = level().height + "px";
+	trackLayer.setAttribute("width", level().width);
+	trackLayer.setAttribute("height", level().height);
+	fit();
+}
+
+function fit() {
+	scale = Math.min(viewport.clientWidth / level().width, viewport.clientHeight / level().height);
 	applyScale();
+	viewport.scrollLeft = 0;
+	viewport.scrollTop = 0;
 }
 
 function applyScale() { world.style.transform = `scale(${scale})`; }
 
-async function load() {
+function load() {
+	clearTimeout(loadTimer);
+	loadTimer = setTimeout(fetchEvents, 250);
+}
+
+async function fetchEvents() {
 	const params = new URLSearchParams();
 	params.set("z", document.getElementById("z").value);
 	params.set("q", document.getElementById("q").value);
@@ -77,38 +111,53 @@ async function load() {
 	document.querySelectorAll("input[name=cat]:checked").forEach(c => params.append("cat", c.value));
 	const resp = await fetch(`${ROOT}/round/${ROUND}/events.json?${params}`);
 	const data = await resp.json();
-	events = data.events;
-	document.getElementById("count").textContent = data.truncated ? `показаны первые ${events.length}, сузьте фильтр` : `${events.length} событий`;
+	events = data.events.sort((a, b) => a.o - b.o);
+	document.getElementById("count").textContent = data.truncated ? `Показаны первые ${events.length} событий, сузьте фильтр` : `${events.length} событий с координатами на этом уровне`;
 	draw();
 }
 
 function draw() {
 	const from = Number(document.getElementById("tstart").value);
 	const to = Number(document.getElementById("tend").value);
-	document.getElementById("tfrom").textContent = clock(from);
-	document.getElementById("tto").textContent = clock(to);
-	const shown = events.filter(e => { const s = secs(e.t); return s >= from && s <= to; });
+	document.getElementById("trange").textContent = `${clock(from)} .. ${clock(to)}`;
+	const shown = events.filter(e => e.o >= from && e.o <= to);
 	pins.innerHTML = "";
+	list.innerHTML = "";
 	for (const e of shown) {
 		const pin = document.createElement("div");
 		pin.className = "pin";
+		pin.id = "pin" + e.i;
 		pin.style.left = px(e.x) + "px";
 		pin.style.top = py(e.y) + "px";
-		pin.style.background = COLORS[e.c.split("-")[0]] || COLORS[e.c] || "#e8eaed";
-		pin.dataset.i = e.i;
+		pin.style.background = color(e.c);
 		pin.onmouseenter = ev => showTip(ev, e);
 		pin.onmouseleave = () => tip.classList.add("hidden");
 		pin.onclick = () => window.open(`${ROOT}/round/${ROUND}/context/${e.i}`, "_blank");
 		pins.appendChild(pin);
+
+		const row = document.createElement("tr");
+		row.innerHTML = `<td class="time mono">+${clock(e.o)}</td><td class="cat"><span class="dot" style="background:${color(e.c)}"></span>${LABELS[e.c] || e.c}</td><td class="msg">${escapeHtml(e.m)}</td>`;
+		row.onclick = () => focusPin(e);
+		list.appendChild(row);
 	}
+	if (!shown.length) list.innerHTML = `<tr><td class="muted">Нет событий в этом окне. Расширьте время или выберите другие категории.</td></tr>`;
 	drawTrack(shown);
+}
+
+function focusPin(e) {
+	document.querySelectorAll(".pin.focus").forEach(p => p.classList.remove("focus"));
+	const pin = document.getElementById("pin" + e.i);
+	if (!pin) return;
+	pin.classList.add("focus");
+	viewport.scrollLeft = px(e.x) * scale - viewport.clientWidth / 2;
+	viewport.scrollTop = py(e.y) * scale - viewport.clientHeight / 2;
 }
 
 function drawTrack(shown) {
 	trackLayer.innerHTML = "";
 	if (!document.getElementById("track").checked) return;
 	const ckey = document.getElementById("ckey").value.toLowerCase();
-	const points = shown.filter(e => !ckey || e.k === ckey).sort((a, b) => secs(a.t) - secs(b.t));
+	const points = shown.filter(e => !ckey || e.k === ckey);
 	if (points.length < 2) return;
 	const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
 	path.setAttribute("points", points.map(e => `${px(e.x)},${py(e.y)}`).join(" "));
@@ -117,16 +166,18 @@ function drawTrack(shown) {
 }
 
 function showTip(ev, e) {
-	tip.textContent = `${e.t} ${e.c}: ${e.m}`;
+	tip.textContent = `+${clock(e.o)} (${e.t}) ${LABELS[e.c] || e.c}, ${e.a}: ${e.m}`;
 	tip.classList.remove("hidden");
 	tip.style.left = Math.min(ev.clientX + 12, window.innerWidth - 420) + "px";
 	tip.style.top = (ev.clientY + 12) + "px";
 }
 
+function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c])); }
+
 viewport.addEventListener("wheel", ev => {
 	ev.preventDefault();
 	const before = scale;
-	scale = Math.min(2, Math.max(0.1, scale * (ev.deltaY < 0 ? 1.15 : 1 / 1.15)));
+	scale = Math.min(2, Math.max(0.05, scale * (ev.deltaY < 0 ? 1.15 : 1 / 1.15)));
 	const rect = viewport.getBoundingClientRect();
 	const mx = ev.clientX - rect.left + viewport.scrollLeft;
 	const my = ev.clientY - rect.top + viewport.scrollTop;
@@ -139,9 +190,9 @@ let drag = null;
 viewport.addEventListener("mousedown", ev => { drag = {x: ev.clientX, y: ev.clientY, l: viewport.scrollLeft, t: viewport.scrollTop}; });
 window.addEventListener("mousemove", ev => { if (drag) { viewport.scrollLeft = drag.l - (ev.clientX - drag.x); viewport.scrollTop = drag.t - (ev.clientY - drag.y); } });
 window.addEventListener("mouseup", () => { drag = null; });
-document.getElementById("z").addEventListener("change", () => { setLevel(); load(); });
+img.onload = fit;
 setLevel();
-load();
+fetchEvents();
 </script>
 {% endif %}
 {% endblock %}

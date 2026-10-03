@@ -42,3 +42,21 @@ th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--bord
 .pin:hover { z-index: 2; transform: scale(1.6); }
 .tip { position: fixed; max-width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 0.85em; pointer-events: none; z-index: 10; }
 .hidden { display: none; }
+.maplayout { display: grid; grid-template-columns: 300px 1fr; gap: 12px; }
+.sidebar { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; align-self: start; position: sticky; top: 12px; max-height: calc(100vh - 90px); overflow: auto; }
+.sidebar h3 { margin: 10px 0 2px; font-size: 0.95em; }
+.sidebar input[type=text], .sidebar input:not([type]), .sidebar select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; width: 100%; }
+.sidebar button.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font: inherit; cursor: pointer; }
+.help { margin: 0 0 6px; color: var(--muted); font-size: 0.9em; line-height: 1.4; }
+.small { font-size: 0.85em; margin: 2px 0; }
+.check { display: flex; align-items: center; gap: 6px; font-size: 0.92em; }
+.cats-list { display: flex; flex-direction: column; gap: 3px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #000; margin-right: 4px; vertical-align: middle; }
+details.other summary { cursor: pointer; color: var(--muted); font-size: 0.9em; margin-top: 4px; }
+.mapmain { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.mapmain .viewport { height: 62vh; }
+.events { max-height: 34vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+.events tr { cursor: pointer; }
+.events tr:hover { background: #262a33; }
+.pin.focus { transform: scale(2); z-index: 3; box-shadow: 0 0 0 3px #fff; }
+@media (max-width: 900px) { .maplayout { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; } }
