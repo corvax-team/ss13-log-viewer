@@ -18,6 +18,7 @@ PAGE_SIZE = 200
 app = FastAPI(root_path=ROOT_PATH, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates.env.globals["static_version"] = str(int((Path(__file__).parent / "static" / "style.css").stat().st_mtime))
 store = LogStore(os.environ.get("LOGS_DIR", "/logs"))
 maps = MapStore(os.environ.get("GAME_DIR", "/game"), os.environ.get("MAPS_DIR", "/maps"), os.environ.get("DMM_TOOLS", "/usr/local/bin/dmm-tools"))
 auth = Auth()
