@@ -95,7 +95,10 @@ function fit() {
 	viewport.scrollTop = 0;
 }
 
-function applyScale() { world.style.transform = `scale(${scale})`; }
+function applyScale() {
+	world.style.transform = `scale(${scale})`;
+	world.style.setProperty("--inv", Math.max(1, 0.6 / scale));
+}
 
 function load() {
 	clearTimeout(loadTimer);
