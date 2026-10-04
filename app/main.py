@@ -25,10 +25,21 @@ auth = Auth()
 MAX_MAP_EVENTS = 4000
 
 
+def render_in_background():
+    if maps.available() and not maps.rendering():
+        asyncio.get_event_loop().run_in_executor(None, maps.render_missing)
+
+
 @app.on_event("startup")
 async def render_maps():
-    if maps.available():
-        asyncio.get_event_loop().run_in_executor(None, maps.render_missing)
+    render_in_background()
+    asyncio.get_event_loop().create_task(render_periodically())
+
+
+async def render_periodically():
+    while True:
+        await asyncio.sleep(600)
+        render_in_background()
 
 
 @app.middleware("http")
@@ -117,6 +128,8 @@ async def map_view(request: Request, number: int):
         return PlainTextResponse("Раунд не найден", status_code=404)
     map_name = round_map(round_)
     meta = maps.meta(map_name) if map_name else None
+    if map_name and not meta:
+        render_in_background()
     start, duration = store.span(round_)
     known, other = store.categories(round_)
     busiest = {}

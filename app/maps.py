@@ -48,13 +48,23 @@ class MapStore:
         path = folder / f"z{z}.webp"
         return path if path.exists() else None
 
+    def rendering(self):
+        return self.lock.locked()
+
     def render_missing(self):
-        with self.lock:
-            for config in sorted(self.game.glob("_maps/*.json")):
-                try:
-                    self._render_map(config)
-                except Exception as error:
-                    log.warning("render of %s failed: %s", config.name, error)
+        if not self.lock.acquire(blocking=False):
+            return
+        try:
+            self._render_all()
+        finally:
+            self.lock.release()
+
+    def _render_all(self):
+        for config in sorted(self.game.glob("_maps/*.json")):
+            try:
+                self._render_map(config)
+            except Exception as error:
+                log.warning("render of %s failed: %s", config.name, error)
 
     def _folder(self, map_name):
         config = self._config_for(map_name)
