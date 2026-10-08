@@ -61,16 +61,17 @@ class Entry:
 
 
 class LogStore:
-    def __init__(self, root):
-        self.root = Path(root)
+    def __init__(self, roots):
+        self.roots = [Path(root) for root in roots.split(":") if root]
         self.cache = OrderedDict()
 
     def rounds(self):
         found = []
-        for path in self.root.glob("*/*/*/round-*"):
-            match = ROUND_RE.search(path.name)
-            if match and path.is_dir():
-                found.append(Round(int(match.group(1)), path, "-".join(path.parts[-4:-1])))
+        for root in self.roots:
+            for path in root.glob("*/*/*/round-*"):
+                match = ROUND_RE.search(path.name)
+                if match and path.is_dir():
+                    found.append(Round(int(match.group(1)), path, "-".join(path.parts[-4:-1])))
         return sorted(found, key=lambda r: r.number, reverse=True)
 
     def round(self, number):

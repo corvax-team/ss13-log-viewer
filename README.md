@@ -8,7 +8,7 @@ Logs are read in place from the server's log directory, nothing is copied or ind
 
 | Variable | Meaning |
 |---|---|
-| `LOGS_DIR` | log root with `YYYY/MM/DD/round-N` folders, default `/logs` |
+| `LOGS_DIR` | log root with `YYYY/MM/DD/round-N` folders, default `/logs`. Several roots can be joined with `:` when instances share one round numbering |
 | `PUBLIC_URL` | address the viewer is reached at, used for the OAuth redirect |
 | `ROOT_PATH` | path prefix when served behind a reverse proxy, for example `/logs` |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | Discord application for login, add `<PUBLIC_URL>/auth/callback` as a redirect |
