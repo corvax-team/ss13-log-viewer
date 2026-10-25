@@ -62,6 +62,8 @@ async def login():
 
 @app.get("/auth/callback")
 async def callback(request: Request, code: str = "", state: str = ""):
+    if not auth.state_valid(state):
+        return RedirectResponse(f"{ROOT_PATH}/auth/login")
     identity, error = await auth.complete(code, state)
     if error:
         return templates.TemplateResponse(request, "login.html", {"login_url": f"{ROOT_PATH}/auth/login", "error": error}, status_code=403)

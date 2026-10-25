@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 
 import aiohttp
 import aiomysql
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadSignature, URLSafeSerializer, URLSafeTimedSerializer
 
 DISCORD_API = "https://discord.com/api/v10"
 SESSION_COOKIE = os.environ.get("SESSION_COOKIE", "logs_session")
@@ -27,15 +27,15 @@ class Auth:
                 "user": os.environ["DB_USER"],
                 "password": os.environ["DB_PASSWORD"],
             }
-        self.states = set()
+        # Signed rather than kept in memory so restarts don't break logins in flight
+        self.states = URLSafeTimedSerializer(os.environ["SESSION_SECRET"], salt="oauth-state")
 
     @property
     def redirect_uri(self):
         return f"{self.public_url}/auth/callback"
 
     def login_url(self):
-        state = secrets.token_urlsafe(16)
-        self.states.add(state)
+        state = self.states.dumps(secrets.token_urlsafe(8))
         params = {
             "client_id": self.client_id,
             "response_type": "code",
@@ -45,10 +45,14 @@ class Auth:
         }
         return f"{DISCORD_API}/oauth2/authorize?{urlencode(params)}"
 
+    def state_valid(self, state):
+        try:
+            self.states.loads(state, max_age=600)
+            return True
+        except BadSignature:
+            return False
+
     async def complete(self, code, state):
-        if state not in self.states:
-            return None, "Сессия входа устарела, попробуйте ещё раз"
-        self.states.discard(state)
         async with aiohttp.ClientSession() as session:
             token = await self._exchange(session, code)
             if not token:
