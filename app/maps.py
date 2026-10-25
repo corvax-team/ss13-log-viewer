@@ -18,6 +18,7 @@ PAD_TILES = 3
 CENTCOM = "_maps/map_files/generic/CentCom.dmm"
 LAVALAND = "_maps/map_files/Mining/Lavaland.dmm"
 LEVEL_RE = re.compile(r"-(\d+)\.png$")
+INCLUDE_RE = re.compile(r'^\s*#include "([^"]+\.dmm)"', re.M)
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -82,10 +83,32 @@ class MapStore:
     def _version(self, config):
         station = self.game / "_maps" / config["map_path"] / config["map_file"]
         digest = hashlib.md5(RENDER_VERSION.encode())
-        for file in (station, self.game / CENTCOM, self.game / LAVALAND):
+        files = [station, self._centcom()] + [dmm for dmm, _ in self._extra_levels(config)]
+        for file in files:
             if file.exists():
                 digest.update(file.read_bytes())
         return digest.hexdigest()[:12]
+
+    def _centcom(self):
+        # z1 is whatever _basemap.dm compiles in first, forks swap CentCom for their own
+        basemap = self.game / "_maps" / "_basemap.dm"
+        if basemap.exists():
+            match = INCLUDE_RE.search(basemap.read_text(encoding="utf-8", errors="replace"))
+            if match:
+                return self.game / "_maps" / match.group(1).replace("\\", "/")
+        return self.game / CENTCOM
+
+    def _extra_levels(self, config):
+        # same order as SSmapping.loadWorld: the mining slot, then Crimson Grid advzones
+        levels = []
+        if config.get("minetype") in (None, "lavaland"):
+            if config.get("umbra_map_file"):
+                levels.append((self.game / "_maps" / config["umbra_map_path"] / config["umbra_map_file"], "Умбра"))
+            else:
+                levels.append((self.game / LAVALAND, "Лаваленд"))
+        if config.get("advzone_map_file"):
+            levels.append((self.game / "_maps" / config["advzone_map_path"] / config["advzone_map_file"], "Окрестности"))
+        return levels
 
     def _render_map(self, config_file):
         config = json.loads(config_file.read_text(encoding="utf-8"))
@@ -101,9 +124,7 @@ class MapStore:
         work.mkdir(parents=True, exist_ok=True)
         levels = {}
         z = 1
-        for dmm, label in ((self.game / CENTCOM, "ЦК"), (station, name), (self.game / LAVALAND, "Лаваленд")):
-            if dmm == self.game / LAVALAND and config.get("minetype") not in (None, "lavaland"):
-                continue
+        for dmm, label in [(self._centcom(), "ЦК"), (station, name)] + self._extra_levels(config):
             for png in self._minimap(dmm, work):
                 target = folder / f"z{z}.webp"
                 crop = _shrink(png, target)
