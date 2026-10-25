@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Логи Arkanar{% endblock %}</title>
+<title>{% block title %}{{ title }}{% endblock %}</title>
 <link rel="stylesheet" href="{{ request.scope.root_path }}/static/style.css?v={{ static_version }}">
 </head>
 <body>
 <header>
-	<a class="brand" href="{{ request.scope.root_path }}/">Логи Arkanar</a>
+	<span><a class="brand" href="{{ request.scope.root_path }}/">{{ title }}</a>{% for name, url in other_viewers %}<a class="other" href="{{ url }}">{{ name }}</a>{% endfor %}</span>
 	{% if user %}<span class="who">{{ user.ckey }} ({{ user.rank }}) <a href="{{ request.scope.root_path }}/auth/logout">выйти</a></span>{% endif %}
 </header>
 <main>{% block content %}{% endblock %}</main>

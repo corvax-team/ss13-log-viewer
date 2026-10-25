@@ -14,6 +14,10 @@ Logs are read in place from the server's log directory, nothing is copied or ind
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | Discord application for login, add `<PUBLIC_URL>/auth/callback` as a redirect |
 | `SSCENTRAL_URL` | SS Central API, used to turn a Discord id into a ckey |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | game database, read access to the `admin` table decides who may log in |
+| `ADMINS_FILE` | legacy `admins.txt` to take admin ranks from instead of the database, for servers on `ADMIN_LEGACY_SYSTEM` |
+| `SESSION_COOKIE` | cookie name, default `logs_session`. Give each viewer on one domain its own |
+| `VIEWER_TITLE` | header and page title, default `Логи` |
+| `OTHER_VIEWERS` | header links to other viewers, `Name=/path/;Name=/path/` |
 | `SESSION_SECRET` | random string that signs the session cookie |
 
 ## Map view

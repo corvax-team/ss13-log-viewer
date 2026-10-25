@@ -3,6 +3,8 @@
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
 header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
 .brand { color: var(--text); text-decoration: none; font-weight: 600; }
+.other { color: var(--muted); text-decoration: none; margin-left: 1rem; }
+.other:hover { color: var(--text); }
 .who { color: var(--muted); }
 main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 a { color: #8ab4f8; }

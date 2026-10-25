@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from urllib.parse import urlencode
 
@@ -7,7 +8,7 @@ import aiomysql
 from itsdangerous import BadSignature, URLSafeSerializer
 
 DISCORD_API = "https://discord.com/api/v10"
-SESSION_COOKIE = "logs_session"
+SESSION_COOKIE = os.environ.get("SESSION_COOKIE", "logs_session")
 
 
 class Auth:
@@ -17,13 +18,15 @@ class Auth:
         self.public_url = os.environ["PUBLIC_URL"].rstrip("/")
         self.central_url = os.environ["SSCENTRAL_URL"].rstrip("/")
         self.serializer = URLSafeSerializer(os.environ["SESSION_SECRET"], salt="session")
-        self.db = {
-            "host": os.environ["DB_HOST"],
-            "port": int(os.environ.get("DB_PORT", "3306")),
-            "db": os.environ["DB_NAME"],
-            "user": os.environ["DB_USER"],
-            "password": os.environ["DB_PASSWORD"],
-        }
+        self.admins_file = os.environ.get("ADMINS_FILE")
+        if not self.admins_file:
+            self.db = {
+                "host": os.environ["DB_HOST"],
+                "port": int(os.environ.get("DB_PORT", "3306")),
+                "db": os.environ["DB_NAME"],
+                "user": os.environ["DB_USER"],
+                "password": os.environ["DB_PASSWORD"],
+            }
         self.states = set()
 
     @property
@@ -93,6 +96,8 @@ class Auth:
             return (await resp.json()).get("ckey")
 
     async def _admin_rank(self, ckey):
+        if self.admins_file:
+            return _legacy_rank(self.admins_file, ckey)
         conn = await aiomysql.connect(**self.db)
         try:
             async with conn.cursor() as cur:
@@ -101,3 +106,19 @@ class Auth:
                 return row[0] if row else None
         finally:
             conn.close()
+
+
+def _legacy_rank(path, ckey):
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            line = line.split("#", 1)[0]
+            if "=" not in line:
+                continue
+            name, rank = line.split("=", 1)
+            if _ckey(name) == _ckey(ckey):
+                return rank.strip() or None
+    return None
+
+
+def _ckey(name):
+    return re.sub(r"[^a-z0-9@]", "", name.lower())
